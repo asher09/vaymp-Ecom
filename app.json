@@ -1,4 +1,17 @@
 {
   "name": "VayampEcommerce",
-  "displayName": "VayampEcommerce"
+  "displayName": "VayampEcommerce",
+  "expo": {
+    "name": "VayampEcommerce",
+    "slug": "vayampecommerce",
+    "version": "1.0.0",
+    "android": {
+      "package": "com.vayampecommerce"
+    },
+    "extra": {
+      "eas": {
+        "projectId": "95e3bb1c-26b6-4b3f-8319-b707af83d550"
+      }
+    }
+  }
 }

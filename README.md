@@ -1,157 +1,119 @@
 # Vayamp E-Commerce Application
 
-A fully functional React Native e-commerce application with product browsing, filtering, sorting, and shopping cart management.
+A fully functional cross-platform React Native e-commerce application built with TypeScript, Redux Toolkit for state management, Redux Persist for local storage hydration, and React Navigation.
 
-## Features
+---
 
-✅ **Product Browsing**
-- Fetch products from FakeStore API
-- Display products in grid layout
-- Load product images with fallback
+## 📱 Features
 
-✅ **Sorting**
-- Sort by Price (Low to High, High to Low)
-- Sort by Rating (High to Low)
-- Apply sorting with modal selection
+### 🛒 Product Browsing & Layout
+- **FakeStore API Integration**: Dynamically fetches products and categories with a configured timeout.
+- **2-Column Responsive Grid**: Beautiful cards displaying high-res product images, loading states, descriptions, rating indicators, and prices.
+- **Pull-To-Refresh**: Smooth gesture reloading on products and shopping bag screens.
+- **Image Fallbacks**: Displays a fallback icon if a remote product image fails to load.
 
-✅ **Filtering**
-- Filter products by category
-- Multi-select category filters
-- Clear all filters option
+### 🔍 Filtering & Sorting Modals
+- **Multi-Select Categories**: Fetch categories dynamically from the API and filter products using an interactive checklist.
+- **Three Sorting Modes**:
+  - Price: Low to High
+  - Price: High to Low
+  - Rating: High to Low
+- **Clear All Options**: Instantly clear sorting and category filters.
 
-✅ **Shopping Bag**
-- Add products to bag
-- Increase/decrease quantity
-- Remove items from bag
-- View total items and grand total
+### 🛍️ Shopping Bag & Persistent State
+- **Add-To-Bag**: Instantly add items to the cart. If a product is already in the bag, the quantity increments automatically.
+- **Quantity Controls**: Adjust item quantities (+/-) directly in the bag. Reducing the quantity to 0 removes the item.
+- **Calculated Totals**: Real-time updates for total items and grand total price (in ₹).
+- **Redux Persist**: Cart items automatically persist to `AsyncStorage`, remaining intact even after closing and reopening the app.
 
-✅ **Persistence**
-- Redux Persist with AsyncStorage
-- Shopping bag data persists after app close
-- Automatic state hydration on app launch
+---
 
-## Tech Stack
+## 🛠️ Technology Stack
 
-- **React Native** - Cross-platform mobile framework
-- **Redux Toolkit** - State management
-- **Redux Persist** - State persistence
-- **React Navigation** - Navigation library
-- **Axios** - HTTP client
-- **AsyncStorage** - Local storage
-- **TypeScript** - Type safety
+- **Framework**: [React Native](https://reactnative.dev/) (v0.86.0)
+- **Language**: [TypeScript](https://www.typescriptlang.org/) for robust type safety
+- **State Management**: [Redux Toolkit](https://redux-toolkit.js.org/) (Slices, Actions)
+- **Local Persistence**: [Redux Persist](https://github.com/rt2zz/redux-persist) with [@react-native-async-storage/async-storage](https://github.com/react-native-async-storage/async-storage)
+- **Navigation**: [React Navigation](https://reactnavigation.org/) (Bottom Tab & Native Stack)
+- **API Client**: [Axios](https://github.com/axios/axios) with default configuration settings
+- **Icons**: [React Native Vector Icons](https://github.com/oblador/react-native-vector-icons) (MaterialCommunityIcons)
 
-## API
+---
 
-- **Base URL**: https://fakestoreapi.com
-- **Endpoints**:
-  - `GET /products` - All products
-  - `GET /products/categories` - All categories
-  - `GET /products/category/:category` - Products by category
-
-## Project Structure
+## 📁 Directory Structure
 
 ```
-src/
-├── api/               # API services
-├── redux/             # Redux store & slices
-├── screens/           # Screen components
-├── components/        # Reusable components
-├── types/             # TypeScript types
-├── utils/             # Helper functions
-└── styles/            # Theme & colors
+VayampEcommerce/
+├── src/
+│   ├── api/                 # API service layer (productApi.ts)
+│   ├── redux/               # Store setup and reducer slices
+│   │   ├── store.ts
+│   │   └── slices/          # Slices (bagSlice.ts, filterSlice.ts)
+│   ├── screens/             # Screen components
+│   │   ├── ProductsScreen.tsx
+│   │   ├── BagScreen.tsx
+│   │   └── modals/          # Overlays (SortModal.tsx, FilterModal.tsx)
+│   ├── components/          # Reusable UI parts (Header, ProductCard, BagItem, EmptyBag)
+│   ├── types/               # TypeScript declarations & typings
+│   ├── utils/               # Storage utilities, helper functions, and constants
+│   └── styles/              # Layout theme colors
+├── App.tsx                  # Root entry rendering Provider wrappers
+└── package.json             # NPM dependencies & build scripts
 ```
 
-## Setup Instructions
+---
+
+## 🚀 Installation & Running
 
 ### Prerequisites
+- Node.js (v18+)
+- Android Studio with Android SDK configured (for Android emulator/builds)
+- Xcode (macOS only, for iOS simulator/builds)
 
-- Node.js v16+
-- Android Studio (for Android)
+### Setup
+1. Clone the repository and navigate to the project directory:
+   ```bash
+   cd VayampEcommerce
+   ```
+2. Install the package dependencies:
+   ```bash
+   npm install
+   ```
+3. (iOS Only) Install CocoaPods:
+   ```bash
+   npm run pod:install
+   ```
 
-### Installation
-
+### Running the App
+Start the Metro bundler server:
 ```bash
-# Navigate to project directory
-cd VayampEcommerce
-
-# Install dependencies
-npm install
-
-# Start development server
 npm start
 ```
 
-### Running on Emulator/Device
+In a separate terminal, launch the application:
+- **Android Emulator / Device**:
+  ```bash
+  npm run android
+  ```
+- **iOS Simulator**:
+  ```bash
+  npm run ios
+  ```
 
-**Android:**
-```bash
-npm run android
-```
+---
 
-### Building APK
+## 📦 Building for Production (Android APK)
 
-```bash
-# Generate keystore (one time)
-cd android/app
-keytool -genkey -v -keystore my-release-key.keystore -keyalg RSA -keysize 2048 -validity 10000 -alias my-key-alias
-cd ../..
+We have configured convenient Gradle scripts for release builds.
 
-# Update android/app/build.gradle with signing config
-
-# Build APK
-npm run android:apk
-
-# APK location: android/app/build/outputs/apk/release/app-release.apk
-```
-
-## Usage
-
-1. **Launch App**: Opens to Products screen by default
-2. **Browse Products**: Scroll through products in grid layout
-3. **Sort Products**: Tap sort icon → select option → applies immediately
-4. **Filter Products**: Tap filter icon → select categories → tap Apply
-5. **Add to Bag**: Tap "Add" button on product card
-6. **View Bag**: Tap Bag icon in tab bar
-7. **Manage Items**: Increase/decrease quantity or remove items
-8. **Persistence**: Close and reopen app → bag items still present
-
-## Redux State Structure
-
-```typescript
-{
-  bag: {
-    items: [
-      {
-        id: number,
-        productId: number,
-        title: string,
-        price: number,
-        image: string,
-        quantity: number,
-      }
-    ],
-    totalItems: number,
-    totalPrice: number,
-  },
-  filter: {
-    selectedCategories: string[],
-    sortBy: 'price-low' | 'price-high' | 'rating' | null,
-  }
-}
-```
-
-## Performance Optimizations
-
-- Memoized selectors for Redux
-- FlatList with keyExtractor for products
-- Image lazy loading with fallback
-- Debounced filter/sort operations
-- Redux Persist for instant app load
-
-## Future Enhancements
-
-- [ ] Product detail screen
-- [ ] Search functionality
-- [ ] Wishlist feature
-- [ ] User authentication
-- [ ] Payment gateway integration
+1. Generate a signing release keystore (one-time setup under `android/app` directory):
+   ```bash
+   cd android/app
+   keytool -genkey -v -keystore my-release-key.keystore -keyalg RSA -keysize 2048 -validity 10000 -alias my-key-alias
+   ```
+2. Configure credentials in `android/app/build.gradle` inside the `signingConfigs` block.
+3. Build the release APK:
+   ```bash
+   npm run android:build
+   ```
+   The generated APK will be outputted to: `android/app/build/outputs/apk/release/app-release.apk`.
