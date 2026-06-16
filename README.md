@@ -1,97 +1,157 @@
-This is a new [**React Native**](https://reactnative.dev) project, bootstrapped using [`@react-native-community/cli`](https://github.com/react-native-community/cli).
+# Vayamp E-Commerce Application
 
-# Getting Started
+A fully functional React Native e-commerce application with product browsing, filtering, sorting, and shopping cart management.
 
-> **Note**: Make sure you have completed the [Set Up Your Environment](https://reactnative.dev/docs/set-up-your-environment) guide before proceeding.
+## Features
 
-## Step 1: Start Metro
+✅ **Product Browsing**
+- Fetch products from FakeStore API
+- Display products in grid layout
+- Load product images with fallback
 
-First, you will need to run **Metro**, the JavaScript build tool for React Native.
+✅ **Sorting**
+- Sort by Price (Low to High, High to Low)
+- Sort by Rating (High to Low)
+- Apply sorting with modal selection
 
-To start the Metro dev server, run the following command from the root of your React Native project:
+✅ **Filtering**
+- Filter products by category
+- Multi-select category filters
+- Clear all filters option
 
-```sh
-# Using npm
+✅ **Shopping Bag**
+- Add products to bag
+- Increase/decrease quantity
+- Remove items from bag
+- View total items and grand total
+
+✅ **Persistence**
+- Redux Persist with AsyncStorage
+- Shopping bag data persists after app close
+- Automatic state hydration on app launch
+
+## Tech Stack
+
+- **React Native** - Cross-platform mobile framework
+- **Redux Toolkit** - State management
+- **Redux Persist** - State persistence
+- **React Navigation** - Navigation library
+- **Axios** - HTTP client
+- **AsyncStorage** - Local storage
+- **TypeScript** - Type safety
+
+## API
+
+- **Base URL**: https://fakestoreapi.com
+- **Endpoints**:
+  - `GET /products` - All products
+  - `GET /products/categories` - All categories
+  - `GET /products/category/:category` - Products by category
+
+## Project Structure
+
+```
+src/
+├── api/               # API services
+├── redux/             # Redux store & slices
+├── screens/           # Screen components
+├── components/        # Reusable components
+├── types/             # TypeScript types
+├── utils/             # Helper functions
+└── styles/            # Theme & colors
+```
+
+## Setup Instructions
+
+### Prerequisites
+
+- Node.js v16+
+- Android Studio (for Android)
+
+### Installation
+
+```bash
+# Navigate to project directory
+cd VayampEcommerce
+
+# Install dependencies
+npm install
+
+# Start development server
 npm start
-
-# OR using Yarn
-yarn start
 ```
 
-## Step 2: Build and run your app
+### Running on Emulator/Device
 
-With Metro running, open a new terminal window/pane from the root of your React Native project, and use one of the following commands to build and run your Android or iOS app:
-
-### Android
-
-```sh
-# Using npm
+**Android:**
+```bash
 npm run android
-
-# OR using Yarn
-yarn android
 ```
 
-### iOS
+### Building APK
 
-For iOS, remember to install CocoaPods dependencies (this only needs to be run on first clone or after updating native deps).
+```bash
+# Generate keystore (one time)
+cd android/app
+keytool -genkey -v -keystore my-release-key.keystore -keyalg RSA -keysize 2048 -validity 10000 -alias my-key-alias
+cd ../..
 
-The first time you create a new project, run the Ruby bundler to install CocoaPods itself:
+# Update android/app/build.gradle with signing config
 
-```sh
-bundle install
+# Build APK
+npm run android:apk
+
+# APK location: android/app/build/outputs/apk/release/app-release.apk
 ```
 
-Then, and every time you update your native dependencies, run:
+## Usage
 
-```sh
-bundle exec pod install
+1. **Launch App**: Opens to Products screen by default
+2. **Browse Products**: Scroll through products in grid layout
+3. **Sort Products**: Tap sort icon → select option → applies immediately
+4. **Filter Products**: Tap filter icon → select categories → tap Apply
+5. **Add to Bag**: Tap "Add" button on product card
+6. **View Bag**: Tap Bag icon in tab bar
+7. **Manage Items**: Increase/decrease quantity or remove items
+8. **Persistence**: Close and reopen app → bag items still present
+
+## Redux State Structure
+
+```typescript
+{
+  bag: {
+    items: [
+      {
+        id: number,
+        productId: number,
+        title: string,
+        price: number,
+        image: string,
+        quantity: number,
+      }
+    ],
+    totalItems: number,
+    totalPrice: number,
+  },
+  filter: {
+    selectedCategories: string[],
+    sortBy: 'price-low' | 'price-high' | 'rating' | null,
+  }
+}
 ```
 
-For more information, please visit [CocoaPods Getting Started guide](https://guides.cocoapods.org/using/getting-started.html).
+## Performance Optimizations
 
-```sh
-# Using npm
-npm run ios
+- Memoized selectors for Redux
+- FlatList with keyExtractor for products
+- Image lazy loading with fallback
+- Debounced filter/sort operations
+- Redux Persist for instant app load
 
-# OR using Yarn
-yarn ios
-```
+## Future Enhancements
 
-If everything is set up correctly, you should see your new app running in the Android Emulator, iOS Simulator, or your connected device.
-
-This is one way to run your app — you can also build it directly from Android Studio or Xcode.
-
-## Step 3: Modify your app
-
-Now that you have successfully run the app, let's make changes!
-
-Open `App.tsx` in your text editor of choice and make some changes. When you save, your app will automatically update and reflect these changes — this is powered by [Fast Refresh](https://reactnative.dev/docs/fast-refresh).
-
-When you want to forcefully reload, for example to reset the state of your app, you can perform a full reload:
-
-- **Android**: Press the <kbd>R</kbd> key twice or select **"Reload"** from the **Dev Menu**, accessed via <kbd>Ctrl</kbd> + <kbd>M</kbd> (Windows/Linux) or <kbd>Cmd ⌘</kbd> + <kbd>M</kbd> (macOS).
-- **iOS**: Press <kbd>R</kbd> in iOS Simulator.
-
-## Congratulations! :tada:
-
-You've successfully run and modified your React Native App. :partying_face:
-
-### Now what?
-
-- If you want to add this new React Native code to an existing application, check out the [Integration guide](https://reactnative.dev/docs/integration-with-existing-apps).
-- If you're curious to learn more about React Native, check out the [docs](https://reactnative.dev/docs/getting-started).
-
-# Troubleshooting
-
-If you're having issues getting the above steps to work, see the [Troubleshooting](https://reactnative.dev/docs/troubleshooting) page.
-
-# Learn More
-
-To learn more about React Native, take a look at the following resources:
-
-- [React Native Website](https://reactnative.dev) - learn more about React Native.
-- [Getting Started](https://reactnative.dev/docs/environment-setup) - an **overview** of React Native and how setup your environment.
-- [Learn the Basics](https://reactnative.dev/docs/getting-started) - a **guided tour** of the React Native **basics**.
-- [Blog](https://reactnative.dev/blog) - read the latest official React Native **Blog** posts.
-- [`@facebook/react-native`](https://github.com/facebook/react-native) - the Open Source; GitHub **repository** for React Native.
+- [ ] Product detail screen
+- [ ] Search functionality
+- [ ] Wishlist feature
+- [ ] User authentication
+- [ ] Payment gateway integration
