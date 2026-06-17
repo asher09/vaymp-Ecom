@@ -46,7 +46,6 @@ export const ProductCard: React.FC<ProductCardProps> = ({
   onPress,
 }) => {
   const dispatch = useDispatch();
-  const [imageLoading, setImageLoading] = useState(true);
   const [imageError, setImageError] = useState(false);
   const [isFavorite, setIsFavorite] = useState(false);
 
@@ -82,32 +81,11 @@ export const ProductCard: React.FC<ProductCardProps> = ({
     >
       {/* Image Container */}
       <View style={styles.imageContainer}>
-        {imageLoading && (
-          <ActivityIndicator
-            size="small"
-            color={colors.primary}
-            style={StyleSheet.absoluteFill}
-          />
-        )}
-
         <Image
           source={{ uri: image }}
           style={styles.image}
-          onLoadStart={() => {
-            if (!imageLoading) {
-              setImageLoading(true);
-            }
-          }}
-          onLoadEnd={() => {
-            if (imageLoading) {
-              setImageLoading(false);
-            }
-          }}
           onError={() => {
             setImageError(true);
-            if (imageLoading) {
-              setImageLoading(false);
-            }
           }}
         />
 
