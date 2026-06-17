@@ -9,6 +9,10 @@ export interface Product {
     rate: number;
     count: number;
   };
+  brand?: string;
+  originalPrice?: number;
+  discountPercentage?: number;
+  isFavorite?: boolean;
 }
 
 export interface Category {
@@ -16,4 +20,4 @@ export interface Category {
   name: string;
 }
 
-export type SortOption = 'price-low' | 'price-high' | 'rating' | null;
+export type SortOption = 'price-low' | 'price-high' | 'rating' | 'newest' | 'offers' | null;

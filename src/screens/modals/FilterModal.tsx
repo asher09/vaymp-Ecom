@@ -5,16 +5,14 @@ import {
   StyleSheet,
   TouchableOpacity,
   Text,
+  TouchableWithoutFeedback,
   SafeAreaView,
-  ActivityIndicator,
   ScrollView,
 } from 'react-native';
 import { useDispatch, useSelector } from 'react-redux';
-import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { setSelectedCategories } from '../../redux/slices/filterSlice';
 import { RootState } from '../../redux/store';
 import { colors } from '../../styles/colors';
-import { APP_STRINGS } from '../../utils/constants';
 import { productApi } from '../../api/productApi';
 
 interface FilterModalProps {
@@ -22,17 +20,42 @@ interface FilterModalProps {
   onClose: () => void;
 }
 
+// Map categories to their helper instructions
+const CATEGORY_SUBTITLES: Record<string, string> = {
+  'Suggested fliters': 'Choose from the mostly used filters',
+  'Gender': 'Select gender',
+  'Price': 'Select price range',
+  'Brand': 'Select brands',
+  'Color': 'Select colors',
+  'Size': 'Select size',
+};
+
+// Mock options for categories to display in the right column
+const MOCK_OPTIONS: Record<string, string[]> = {
+  'Suggested fliters': ['2 days delivery', 'Brown', 'Under ₹700', '50% off'],
+  'Gender': ['Men', 'Women', 'Boys', 'Girls', 'Unisex'],
+  'Price': ['Under ₹500', '₹500 - ₹1000', '₹1000 - ₹2000', 'Above ₹2000'],
+  'Brand': ['Vashions', 'Zudio', 'Savana', 'Zara', 'H&M'],
+  'Color': ['Blue', 'White', 'Purple', 'Red', 'Brown', 'Black'],
+  'Size': ['S', 'M', 'L', 'XL', 'XXL'],
+  'New arrivals': ['Last 7 days', 'Last 30 days'],
+  'Fabric': ['Cotton', 'Polyester', 'Linen', 'Denim'],
+  'Fit': ['Slim Fit', 'Regular Fit', 'Loose Fit'],
+  'Discounts': ['10% and above', '30% and above', '50% and above'],
+  'Delivery time': ['Same day', 'Next day', '2-3 days'],
+};
+
 export const FilterModal: React.FC<FilterModalProps> = ({ visible, onClose }) => {
   const dispatch = useDispatch();
   const [categories, setCategories] = useState<string[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [selectedSection, setSelectedSection] = useState<string>('Suggested fliters');
   const [tempSelectedCategories, setTempSelectedCategories] = useState<string[]>([]);
 
   const selectedCategories = useSelector(
     (state: RootState) => state.filter.selectedCategories
   );
 
-  // Fetch categories when modal opens
+  // Sync state when modal becomes visible
   useEffect(() => {
     if (visible) {
       fetchCategories();
@@ -44,19 +67,20 @@ export const FilterModal: React.FC<FilterModalProps> = ({ visible, onClose }) =>
     try {
       const data = await productApi.getCategories();
       setCategories(data);
-      setLoading(false);
+      if (data.length > 0 && !data.includes(selectedSection)) {
+        setSelectedSection(data[0]);
+      }
     } catch (error) {
       console.error('Error fetching categories:', error);
-      setLoading(false);
     }
   };
 
-  const handleToggleCategory = (category: string) => {
+  const handleToggleOption = (option: string) => {
     setTempSelectedCategories((prev) => {
-      if (prev.includes(category)) {
-        return prev.filter((c) => c !== category);
+      if (prev.includes(option)) {
+        return prev.filter((o) => o !== option);
       } else {
-        return [...prev, category];
+        return [...prev, option];
       }
     });
   };
@@ -68,169 +92,269 @@ export const FilterModal: React.FC<FilterModalProps> = ({ visible, onClose }) =>
 
   const handleClearFilters = () => {
     setTempSelectedCategories([]);
-    dispatch(setSelectedCategories([]));
   };
+
+  const currentOptions = MOCK_OPTIONS[selectedSection] || [];
+  const currentSubtitle = CATEGORY_SUBTITLES[selectedSection] || 'Choose filters';
 
   return (
     <Modal
       visible={visible}
       transparent
-      animationType="slide"
+      animationType="fade"
       onRequestClose={onClose}
     >
-      <SafeAreaView style={styles.container}>
-        {/* Header */}
-        <View style={styles.header}>
-          <Text style={styles.headerTitle}>Filters</Text>
-          <TouchableOpacity onPress={onClose} style={styles.closeButton}>
-            <Icon name="close" size={24} color={colors.text} />
-          </TouchableOpacity>
-        </View>
-
-        {/* Categories */}
-        <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
-          <Text style={styles.sectionTitle}>Category</Text>
-
-          {loading ? (
-            <ActivityIndicator size="large" color={colors.primary} />
-          ) : (
-            categories.map((category) => (
-              <TouchableOpacity
-                key={category}
-                style={styles.categoryItem}
-                onPress={() => handleToggleCategory(category)}
-              >
-                <View
-                  style={[
-                    styles.checkbox,
-                    tempSelectedCategories.includes(category) &&
-                      styles.checkboxChecked,
-                  ]}
-                >
-                  {tempSelectedCategories.includes(category) && (
-                    <Icon name="check" size={14} color={colors.white} />
-                  )}
+      <TouchableWithoutFeedback onPress={onClose}>
+        <View style={styles.backdrop}>
+          <TouchableWithoutFeedback>
+            <View style={styles.sheetContainer}>
+              <SafeAreaView style={styles.safeArea}>
+                {/* Header */}
+                <View style={styles.header}>
+                  <Text style={styles.headerTitle}>Filters</Text>
                 </View>
-                <Text style={styles.categoryLabel}>
-                  {category.charAt(0).toUpperCase() + category.slice(1)}
-                </Text>
-              </TouchableOpacity>
-            ))
-          )}
-        </ScrollView>
 
-        {/* Footer Buttons */}
-        <View style={styles.footer}>
-          <TouchableOpacity
-            style={styles.clearButton}
-            onPress={handleClearFilters}
-          >
-            <Text style={styles.clearButtonText}>Clear All</Text>
-          </TouchableOpacity>
+                {/* Body split pane */}
+                <View style={styles.body}>
+                  {/* Left Column - Category List */}
+                  <View style={styles.leftPane}>
+                    <ScrollView showsVerticalScrollIndicator={false}>
+                      {categories.map((category) => {
+                        const isSelected = selectedSection === category;
+                        return (
+                          <TouchableOpacity
+                            key={category}
+                            style={[
+                              styles.categoryItem,
+                              isSelected && styles.categoryItemActive,
+                            ]}
+                            onPress={() => setSelectedSection(category)}
+                            activeOpacity={0.7}
+                          >
+                            {isSelected && <View style={styles.activeIndicator} />}
+                            <Text
+                              style={[
+                                styles.categoryText,
+                                isSelected && styles.categoryTextActive,
+                              ]}
+                            >
+                              {category}
+                            </Text>
+                          </TouchableOpacity>
+                        );
+                      })}
+                    </ScrollView>
+                  </View>
 
-          <TouchableOpacity
-            style={styles.applyButton}
-            onPress={handleApplyFilters}
-          >
-            <Text style={styles.applyButtonText}>{APP_STRINGS.APPLY}</Text>
-          </TouchableOpacity>
+                  {/* Right Column - Options Pills */}
+                  <View style={styles.rightPane}>
+                    <Text style={styles.sectionSubtitle}>{currentSubtitle}</Text>
+                    <ScrollView
+                      contentContainerStyle={styles.pillsContainer}
+                      showsVerticalScrollIndicator={false}
+                    >
+                      {currentOptions.map((option) => {
+                        const isSelected = tempSelectedCategories.includes(option);
+                        return (
+                          <TouchableOpacity
+                            key={option}
+                            style={[
+                              styles.pill,
+                              isSelected && styles.pillSelected,
+                            ]}
+                            onPress={() => handleToggleOption(option)}
+                            activeOpacity={0.7}
+                          >
+                            <Text
+                              style={[
+                                styles.pillText,
+                                isSelected && styles.pillTextSelected,
+                              ]}
+                            >
+                              {option}
+                            </Text>
+                          </TouchableOpacity>
+                        );
+                      })}
+                    </ScrollView>
+                  </View>
+                </View>
+
+                {/* Footer Buttons */}
+                <View style={styles.footer}>
+                  <TouchableOpacity
+                    style={styles.clearButton}
+                    onPress={handleClearFilters}
+                    activeOpacity={0.7}
+                  >
+                    <Text style={styles.clearButtonText}>Clear all</Text>
+                  </TouchableOpacity>
+
+                  <TouchableOpacity
+                    style={styles.applyButton}
+                    onPress={handleApplyFilters}
+                    activeOpacity={0.7}
+                  >
+                    <Text style={styles.applyButtonText}>Apply filter</Text>
+                  </TouchableOpacity>
+                </View>
+              </SafeAreaView>
+            </View>
+          </TouchableWithoutFeedback>
         </View>
-      </SafeAreaView>
+      </TouchableWithoutFeedback>
     </Modal>
   );
 };
 
 const styles = StyleSheet.create({
-  container: {
+  backdrop: {
     flex: 1,
-    backgroundColor: colors.surface,
+    backgroundColor: 'rgba(0, 0, 0, 0.4)',
+    justifyContent: 'flex-end',
+  },
+  sheetContainer: {
+    backgroundColor: '#FFFFFF',
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    width: '100%',
+    height: '75%',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: -4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 10,
+    elevation: 10,
+    overflow: 'hidden',
+  },
+  safeArea: {
+    flex: 1,
   },
   header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.border,
+    paddingHorizontal: 20,
+    paddingVertical: 18,
+    borderBottomWidth: 1.5,
+    borderBottomColor: '#ECEEF2',
   },
   headerTitle: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: colors.text,
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: colors.primary, // #4E4BFC blue title
+    fontFamily: 'System',
   },
-  closeButton: {
-    padding: 8,
-  },
-  content: {
+  body: {
     flex: 1,
-    paddingHorizontal: 16,
-    paddingVertical: 12,
+    flexDirection: 'row',
   },
-  sectionTitle: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: colors.text,
-    marginBottom: 12,
+  leftPane: {
+    width: '38%',
+    backgroundColor: '#F2F4F7',
+    borderRightWidth: 1,
+    borderRightColor: '#E5E7EB',
   },
   categoryItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingVertical: 12,
-    paddingHorizontal: 8,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.border,
-  },
-  checkbox: {
-    width: 20,
-    height: 20,
-    borderRadius: 4,
-    borderWidth: 2,
-    borderColor: colors.border,
-    marginRight: 12,
+    paddingVertical: 16,
+    paddingHorizontal: 16,
+    position: 'relative',
     justifyContent: 'center',
-    alignItems: 'center',
   },
-  checkboxChecked: {
-    backgroundColor: colors.primary,
+  categoryItemActive: {
+    backgroundColor: '#FFFFFF',
+  },
+  activeIndicator: {
+    position: 'absolute',
+    left: 0,
+    top: 0,
+    bottom: 0,
+    width: 3.5,
+    backgroundColor: colors.primary, // Blue vertical line on left
+  },
+  categoryText: {
+    fontSize: 13,
+    fontWeight: '500',
+    color: '#4B5563',
+    fontFamily: 'System',
+  },
+  categoryTextActive: {
+    color: colors.primary,
+    fontWeight: 'bold',
+  },
+  rightPane: {
+    flex: 1,
+    padding: 16,
+    backgroundColor: '#FFFFFF',
+  },
+  sectionSubtitle: {
+    fontSize: 12,
+    color: '#6B7280',
+    marginBottom: 16,
+    fontFamily: 'System',
+    fontWeight: '500',
+  },
+  pillsContainer: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+    paddingBottom: 20,
+  },
+  pill: {
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderRadius: 20,
+    borderWidth: 1.2,
+    borderColor: '#D1D5DB',
+    backgroundColor: '#FFFFFF',
+    marginBottom: 4,
+  },
+  pillSelected: {
     borderColor: colors.primary,
   },
-  categoryLabel: {
-    fontSize: 14,
+  pillText: {
+    fontSize: 12,
+    color: '#374151',
     fontWeight: '500',
-    color: colors.text,
-    textTransform: 'capitalize',
+    fontFamily: 'System',
+  },
+  pillTextSelected: {
+    color: colors.primary,
+    fontWeight: 'bold',
   },
   footer: {
     flexDirection: 'row',
     paddingHorizontal: 16,
-    paddingVertical: 12,
+    paddingVertical: 14,
+    borderTopWidth: 1.5,
+    borderTopColor: '#ECEEF2',
+    backgroundColor: '#FFFFFF',
     gap: 12,
-    borderTopWidth: 1,
-    borderTopColor: colors.border,
   },
   clearButton: {
     flex: 1,
-    paddingVertical: 12,
-    borderRadius: 6,
-    backgroundColor: colors.background,
+    height: 46,
+    borderRadius: 23,
+    borderWidth: 1.5,
+    borderColor: colors.primary,
+    backgroundColor: '#FFFFFF',
+    justifyContent: 'center',
     alignItems: 'center',
   },
   clearButtonText: {
     fontSize: 14,
-    fontWeight: '600',
-    color: colors.textSecondary,
+    fontWeight: 'bold',
+    color: colors.primary,
+    fontFamily: 'System',
   },
   applyButton: {
     flex: 1,
-    paddingVertical: 12,
-    borderRadius: 6,
+    height: 46,
+    borderRadius: 23,
     backgroundColor: colors.primary,
+    justifyContent: 'center',
     alignItems: 'center',
   },
   applyButtonText: {
     fontSize: 14,
-    fontWeight: '600',
+    fontWeight: 'bold',
     color: colors.white,
+    fontFamily: 'System',
   },
 });

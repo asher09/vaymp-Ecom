@@ -1,31 +1,32 @@
 export const colors = {
-  // Primary colors
-  primary: '#2C3E50',
-  primaryLight: '#34495E',
-  primaryDark: '#1A252F',
+  // Primary brand color (Royal blue/purple from design)
+  primary: '#4E4BFC',
+  primaryLight: '#706EFF',
+  primaryDark: '#3532C9',
 
-  // Secondary colors
-  secondary: '#E74C3C',
-  secondaryLight: '#EC7063',
-  secondaryDark: '#CB4335',
+  // Secondary color (keeping red as error/alert accent)
+  secondary: '#FF3B30',
+  secondaryLight: '#FF6961',
+  secondaryDark: '#C92A22',
 
   // Neutral colors
   background: '#F8F9FA',
+  headerBg: '#F2F4F7',
   surface: '#FFFFFF',
-  border: '#ECEFF1',
-  divider: '#BDBDBD',
+  border: '#E5E7EB',
+  divider: '#E5E7EB',
 
   // Text colors
-  text: '#212121',
-  textSecondary: '#757575',
-  textTertiary: '#9E9E9E',
+  text: '#111827',
+  textSecondary: '#6B7280',
+  textTertiary: '#9CA3AF',
   textInverse: '#FFFFFF',
 
   // Semantic colors
-  success: '#27AE60',
-  error: '#E74C3C',
-  warning: '#F39C12',
-  info: '#3498DB',
+  success: '#10B981',
+  error: '#EF4444',
+  warning: '#F59E0B',
+  info: '#3B82F6',
 
   // Special
   white: '#FFFFFF',
@@ -36,8 +37,8 @@ export const colors = {
   overlay: 'rgba(0,0,0,0.5)',
   overlayLight: 'rgba(0,0,0,0.3)',
 
-  // Shadows (use as backgroundColor with opacity)
-  shadow: 'rgba(0,0,0,0.1)',
+  // Shadows
+  shadow: 'rgba(0,0,0,0.08)',
 };
 
 // Common opacity values

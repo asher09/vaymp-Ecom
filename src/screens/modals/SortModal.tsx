@@ -5,14 +5,13 @@ import {
   StyleSheet,
   TouchableOpacity,
   Text,
+  TouchableWithoutFeedback,
   SafeAreaView,
 } from 'react-native';
 import { useDispatch, useSelector } from 'react-redux';
-import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { setSortOption } from '../../redux/slices/filterSlice';
 import { RootState } from '../../redux/store';
 import { colors } from '../../styles/colors';
-import { SORT_OPTIONS, SORT_LABELS, APP_STRINGS } from '../../utils/constants';
 import type { SortOption } from '../../types/product';
 
 interface SortModalProps {
@@ -21,9 +20,11 @@ interface SortModalProps {
 }
 
 const SORT_ITEMS: { value: SortOption; label: string }[] = [
-  { value: SORT_OPTIONS.PRICE_LOW_HIGH as SortOption, label: SORT_LABELS['price-low'] },
-  { value: SORT_OPTIONS.PRICE_HIGH_LOW as SortOption, label: SORT_LABELS['price-high'] },
-  { value: SORT_OPTIONS.RATING_HIGH_LOW as SortOption, label: SORT_LABELS['rating'] },
+  { value: 'newest', label: 'Newest arrivals' },
+  { value: 'price-low', label: 'Price - low to high' },
+  { value: 'price-high', label: 'Price - high to low' },
+  { value: 'offers', label: 'Offers and discounts' },
+  { value: 'rating', label: 'Best sellers' },
 ];
 
 export const SortModal: React.FC<SortModalProps> = ({ visible, onClose }) => {
@@ -39,132 +40,101 @@ export const SortModal: React.FC<SortModalProps> = ({ visible, onClose }) => {
     <Modal
       visible={visible}
       transparent
-      animationType="slide"
+      animationType="fade"
       onRequestClose={onClose}
     >
-      <SafeAreaView style={styles.container}>
-        {/* Header */}
-        <View style={styles.header}>
-          <Text style={styles.headerTitle}>Sort Products</Text>
-          <TouchableOpacity onPress={onClose} style={styles.closeButton}>
-            <Icon name="close" size={24} color={colors.text} />
-          </TouchableOpacity>
-        </View>
+      <TouchableWithoutFeedback onPress={onClose}>
+        <View style={styles.backdrop}>
+          <TouchableWithoutFeedback>
+            <View style={styles.sheetContainer}>
+              <SafeAreaView style={styles.safeArea}>
+                {/* Header */}
+                <View style={styles.header}>
+                  <Text style={styles.headerTitle}>Sort by</Text>
+                </View>
 
-        {/* Sort Options */}
-        <View style={styles.content}>
-          {SORT_ITEMS.map((item) => (
-            <TouchableOpacity
-              key={item.value}
-              style={styles.sortItem}
-              onPress={() => handleSelectSort(item.value)}
-            >
-              <View
-                style={[
-                  styles.radio,
-                  selectedSort === item.value && styles.radioSelected,
-                ]}
-              >
-                {selectedSort === item.value && (
-                  <View style={styles.radioDot} />
-                )}
-              </View>
-              <Text style={styles.sortLabel}>{item.label}</Text>
-            </TouchableOpacity>
-          ))}
+                {/* Sort Options */}
+                <View style={styles.content}>
+                  {SORT_ITEMS.map((item) => {
+                    const isSelected = selectedSort === item.value;
+                    return (
+                      <TouchableOpacity
+                        key={item.value}
+                        style={styles.sortItem}
+                        onPress={() => handleSelectSort(item.value)}
+                        activeOpacity={0.7}
+                      >
+                        <Text
+                          style={[
+                            styles.sortLabel,
+                            isSelected && styles.sortLabelActive,
+                          ]}
+                        >
+                          {item.label}
+                        </Text>
+                      </TouchableOpacity>
+                    );
+                  })}
+                </View>
+              </SafeAreaView>
+            </View>
+          </TouchableWithoutFeedback>
         </View>
-
-        {/* Clear Button */}
-        <View style={styles.footer}>
-          <TouchableOpacity
-            style={styles.clearButton}
-            onPress={() => {
-              dispatch(setSortOption(null));
-              onClose();
-            }}
-          >
-            <Text style={styles.clearButtonText}>{APP_STRINGS.CLEAR}</Text>
-          </TouchableOpacity>
-        </View>
-      </SafeAreaView>
+      </TouchableWithoutFeedback>
     </Modal>
   );
 };
 
 const styles = StyleSheet.create({
-  container: {
+  backdrop: {
     flex: 1,
-    backgroundColor: colors.surface,
+    backgroundColor: 'rgba(0, 0, 0, 0.4)',
+    justifyContent: 'flex-end',
+  },
+  sheetContainer: {
+    backgroundColor: '#FFFFFF',
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    width: '100%',
+    paddingBottom: 24,
+    // Shadow for iOS
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: -4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 10,
+    // Shadow for Android
+    elevation: 10,
+  },
+  safeArea: {
+    width: '100%',
   },
   header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.border,
+    paddingHorizontal: 24,
+    paddingTop: 24,
+    paddingBottom: 16,
   },
   headerTitle: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: colors.text,
-  },
-  closeButton: {
-    padding: 8,
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: colors.primary, // #4E4BFC blue title
+    fontFamily: 'System',
   },
   content: {
-    flex: 1,
-    paddingVertical: 12,
+    width: '100%',
   },
   sortItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 16,
+    width: '100%',
+    paddingHorizontal: 24,
     paddingVertical: 14,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.border,
-  },
-  radio: {
-    width: 20,
-    height: 20,
-    borderRadius: 10,
-    borderWidth: 2,
-    borderColor: colors.border,
-    marginRight: 12,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  radioSelected: {
-    borderColor: colors.primary,
-  },
-  radioDot: {
-    width: 10,
-    height: 10,
-    borderRadius: 5,
-    backgroundColor: colors.primary,
   },
   sortLabel: {
     fontSize: 14,
     fontWeight: '500',
-    color: colors.text,
+    color: '#374151',
+    fontFamily: 'System',
   },
-  footer: {
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    borderTopWidth: 1,
-    borderTopColor: colors.border,
-  },
-  clearButton: {
-    paddingVertical: 10,
-    paddingHorizontal: 12,
-    borderRadius: 6,
-    backgroundColor: colors.background,
-    alignItems: 'center',
-  },
-  clearButtonText: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: colors.textSecondary,
+  sortLabelActive: {
+    color: colors.primary,
+    fontWeight: 'bold',
   },
 });

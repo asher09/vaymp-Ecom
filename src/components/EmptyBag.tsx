@@ -1,8 +1,6 @@
 import React from 'react';
-import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
-import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
+import { View, Text, TouchableOpacity, StyleSheet, Image } from 'react-native';
 import { colors } from '../styles/colors';
-import { APP_STRINGS } from '../utils/constants';
 
 interface EmptyBagProps {
   onContinueShopping: () => void;
@@ -11,28 +9,29 @@ interface EmptyBagProps {
 export const EmptyBag: React.FC<EmptyBagProps> = ({ onContinueShopping }) => {
   return (
     <View style={styles.container}>
-      <View style={styles.content}>
-        <View style={styles.iconContainer}>
-          <Icon name="shopping-outline" size={80} color={colors.secondary} />
-        </View>
+      {/* OOPS Title */}
+      <Text style={styles.oopsText}>OOPS ☹️</Text>
+      
+      {/* Subtitle */}
+      <Text style={styles.subtitleText}>Your bag is empty.</Text>
 
-        <Text style={styles.title}>{APP_STRINGS.BAG_EMPTY}</Text>
+      {/* Tote Bag Image */}
+      <Image
+        source={require('../../assets/tote-bag.png')}
+        style={styles.toteBagImage}
+      />
 
-        <Text style={styles.subtitle}>
-          Start adding items to fill your shopping bag
-        </Text>
+      {/* Call to action text */}
+      <Text style={styles.actionPromptText}>Add items to your bag now</Text>
 
-        <TouchableOpacity
-          style={styles.button}
-          onPress={onContinueShopping}
-          activeOpacity={0.8}
-        >
-          <Icon name="arrow-left" size={18} color={colors.white} />
-          <Text style={styles.buttonText}>
-            {APP_STRINGS.CONTINUE_SHOPPING}
-          </Text>
-        </TouchableOpacity>
-      </View>
+      {/* Start Shopping Button */}
+      <TouchableOpacity
+        style={styles.button}
+        onPress={onContinueShopping}
+        activeOpacity={0.8}
+      >
+        <Text style={styles.buttonText}>Start shopping</Text>
+      </TouchableOpacity>
     </View>
   );
 };
@@ -40,54 +39,56 @@ export const EmptyBag: React.FC<EmptyBagProps> = ({ onContinueShopping }) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.background,
+    backgroundColor: '#FFFFFF',
     justifyContent: 'center',
     alignItems: 'center',
-    paddingHorizontal: 16,
+    paddingHorizontal: 24,
   },
-  content: {
-    alignItems: 'center',
+  oopsText: {
+    fontSize: 22,
+    fontWeight: '900',
+    color: colors.black,
+    fontFamily: 'System',
+    marginBottom: 4,
   },
-  iconContainer: {
-    width: 120,
-    height: 120,
-    borderRadius: 60,
-    backgroundColor: colors.surface,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: 24,
-    shadowColor: colors.shadow,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.15,
-    shadowRadius: 8,
-    elevation: 5,
-  },
-  title: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: colors.text,
-    marginBottom: 8,
-    textAlign: 'center',
-  },
-  subtitle: {
+  subtitleText: {
     fontSize: 14,
-    color: colors.textSecondary,
-    textAlign: 'center',
-    marginBottom: 32,
-    lineHeight: 20,
+    fontWeight: '600',
+    color: '#374151',
+    fontFamily: 'System',
+    marginBottom: 40,
+  },
+  toteBagImage: {
+    width: 226,
+    height: 226,
+    resizeMode: 'contain',
+    marginBottom: 30,
+  },
+  actionPromptText: {
+    fontSize: 13,
+    color: '#4B5563',
+    fontWeight: '500',
+    fontFamily: 'System',
+    marginBottom: 16,
   },
   button: {
-    backgroundColor: colors.primary,
+    backgroundColor: colors.primary, // #4E4BFC blue
     paddingVertical: 12,
-    paddingHorizontal: 28,
-    borderRadius: 8,
-    flexDirection: 'row',
+    paddingHorizontal: 40,
+    borderRadius: 24,
+    width: '65%',
     alignItems: 'center',
-    gap: 8,
+    justifyContent: 'center',
+    shadowColor: colors.primary,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.15,
+    shadowRadius: 6,
+    elevation: 3,
   },
   buttonText: {
     color: colors.white,
     fontSize: 14,
-    fontWeight: '600',
+    fontWeight: 'bold',
+    fontFamily: 'System',
   },
 });

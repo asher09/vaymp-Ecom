@@ -5,33 +5,27 @@ import {
   StyleSheet,
   TouchableOpacity,
   Text,
-  RefreshControl,
+  Alert,
 } from 'react-native';
-import { useSelector } from 'react-redux';
+import { useSelector, useDispatch } from 'react-redux';
+import { MaterialCommunityIcons as Icon } from '@expo/vector-icons';
 import { RootState } from '../redux/store';
 import { Header } from '../components/Header';
 import { BagItem } from '../components/BagItem';
 import { EmptyBag } from '../components/EmptyBag';
 import { colors } from '../styles/colors';
-import { formatPrice } from '../utils/helpers';
-import { APP_STRINGS } from '../utils/constants';
-import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
+import { toggleSelectAllItems, clearBag } from '../redux/slices/bagSlice';
+import { DownArrowIcon, BlueTickIcon, DeliveryBoyIcon } from '../components/CustomSvgIcons';
 
 interface BagScreenProps {
   navigation: any;
 }
 
 export const BagScreen: React.FC<BagScreenProps> = ({ navigation }) => {
-  const [refreshing, setRefreshing] = React.useState(false);
-  
+  const dispatch = useDispatch();
   const bagItems = useSelector((state: RootState) => state.bag.items);
   const totalItems = useSelector((state: RootState) => state.bag.totalItems);
   const totalPrice = useSelector((state: RootState) => state.bag.totalPrice);
-
-  const handleRefresh = () => {
-    setRefreshing(true);
-    setTimeout(() => setRefreshing(false), 500);
-  };
 
   const renderBagItem = ({ item }: { item: any }) => (
     <BagItem
@@ -41,6 +35,10 @@ export const BagScreen: React.FC<BagScreenProps> = ({ navigation }) => {
       price={item.price}
       image={item.image}
       quantity={item.quantity}
+      originalPrice={item.originalPrice}
+      discountPercentage={item.discountPercentage}
+      isSelected={item.isSelected}
+      description={item.description}
     />
   );
 
@@ -49,59 +47,102 @@ export const BagScreen: React.FC<BagScreenProps> = ({ navigation }) => {
   if (isEmpty) {
     return (
       <View style={styles.container}>
-        <Header title={APP_STRINGS.BAG} />
+        <Header title="Bag" showBack={true} onBackPress={() => navigation.navigate('Products')} />
         <EmptyBag onContinueShopping={() => navigation.navigate('Products')} />
       </View>
     );
   }
 
+  // Calculate if all items are selected
+  const allSelected = bagItems.every(item => item.isSelected);
+
+  const handleToggleSelectAll = () => {
+    dispatch(toggleSelectAllItems(!allSelected));
+  };
+
+  const handleProceedToPay = () => {
+    if (totalItems === 0) {
+      Alert.alert('Cannot Proceed', 'Please select at least one item to proceed to pay.');
+      return;
+    }
+    Alert.alert(
+      'Payment Success',
+      `Your payment of ₹${totalPrice} for ${totalItems} item(s) was successful!`,
+      [
+        {
+          text: 'Great!',
+          onPress: () => {
+            dispatch(clearBag()); // clear bag on successful mock payment
+            navigation.navigate('Products');
+          },
+        },
+      ]
+    );
+  };
+
   return (
     <View style={styles.container}>
-      <Header title={APP_STRINGS.BAG} />
+      {/* Header showing '< Bag' and heart outline icon */}
+      <Header
+        title="Bag"
+        showBack={true}
+        onBackPress={() => navigation.goBack()}
+        onHeartPress={() => Alert.alert('Favorites', 'Wishlist clicked')}
+      />
 
+      {/* Main Content List */}
       <FlatList
         data={bagItems}
         renderItem={renderBagItem}
         keyExtractor={item => item.id.toString()}
+        showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.listContent}
-        refreshControl={
-          <RefreshControl
-            refreshing={refreshing}
-            onRefresh={handleRefresh}
-            colors={[colors.primary]}
-          />
+        ListHeaderComponent={
+          <>
+            {/* Delivery address details section */}
+            <View style={styles.deliveryContainer}>
+              <View style={styles.deliveryLeftRow}>
+                <DeliveryBoyIcon style={styles.deliveryIcon} />
+                <View style={styles.deliveryTextCol}>
+                  <Text style={styles.deliveryHeadline}>Delivering in just 60 min</Text>
+                  <Text style={styles.deliveryAddress} numberOfLines={1}>
+                    Full address - 29 Aparna Complex, Gurgaon...
+                  </Text>
+                </View>
+              </View>
+              <TouchableOpacity style={styles.deliveryExpandButton} activeOpacity={0.6}>
+                <DownArrowIcon width={14.3} height={8.78} color="#676769" style={styles.expandIcon} />
+              </TouchableOpacity>
+            </View>
+
+            {/* FREE Delivery banner */}
+            <View style={styles.freeDeliveryBanner}>
+              <BlueTickIcon style={styles.tickIcon} />
+              <Text style={styles.freeDeliveryText}>
+                Yayy! Your order is eligible for FREE delivery.
+              </Text>
+            </View>
+
+            {/* Select/Deselect all items link */}
+            <View style={styles.selectToggleContainer}>
+              <TouchableOpacity onPress={handleToggleSelectAll} activeOpacity={0.7}>
+                <Text style={styles.selectToggleText}>
+                  {allSelected ? 'Deselect all items' : 'Select all items'}
+                </Text>
+              </TouchableOpacity>
+            </View>
+          </>
         }
       />
 
-      {/* Bottom Summary */}
-      <View style={styles.summaryContainer}>
-        {/* Items count */}
-        <View style={styles.summaryRow}>
-          <Text style={styles.summaryLabel}>{APP_STRINGS.TOTAL_ITEMS}:</Text>
-          <Text style={styles.summaryValue}>{totalItems}</Text>
-        </View>
-
-        {/* Divider */}
-        <View style={styles.divider} />
-
-        {/* Total price */}
-        <View style={styles.summaryRow}>
-          <Text style={styles.summaryLabel}>{APP_STRINGS.GRAND_TOTAL}:</Text>
-          <Text style={styles.totalPrice}>{formatPrice(totalPrice)}</Text>
-        </View>
-
-        {/* Checkout Button */}
+      {/* Bottom Summary CTA Bar */}
+      <View style={styles.payBarContainer}>
         <TouchableOpacity
-          style={styles.checkoutButton}
-          activeOpacity={0.8}
-          onPress={() => {
-            // Handle checkout
-          }}
+          style={styles.payButton}
+          activeOpacity={0.85}
+          onPress={handleProceedToPay}
         >
-          <Icon name="check-circle-outline" size={20} color={colors.white} />
-          <Text style={styles.checkoutButtonText}>
-            {APP_STRINGS.CHECKOUT}
-          </Text>
+          <Text style={styles.payButtonText}>Proceed to pay</Text>
         </TouchableOpacity>
       </View>
     </View>
@@ -111,56 +152,112 @@ export const BagScreen: React.FC<BagScreenProps> = ({ navigation }) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.background,
+    backgroundColor: '#FFFFFF',
   },
   listContent: {
-    paddingVertical: 8,
+    paddingBottom: 100, // padding to clear bottom absolute pay bar
   },
-  summaryContainer: {
-    backgroundColor: colors.surface,
-    borderTopWidth: 1,
-    borderTopColor: colors.border,
-    padding: 16,
-  },
-  summaryRow: {
+  deliveryContainer: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
-    marginVertical: 8,
-  },
-  summaryLabel: {
-    fontSize: 13,
-    fontWeight: '500',
-    color: colors.text,
-  },
-  summaryValue: {
-    fontSize: 13,
-    fontWeight: '600',
-    color: colors.text,
-  },
-  totalPrice: {
-    fontSize: 16,
-    fontWeight: '700',
-    color: colors.secondary,
-  },
-  divider: {
-    height: 1,
-    backgroundColor: colors.border,
-    marginVertical: 8,
-  },
-  checkoutButton: {
-    backgroundColor: colors.primary,
+    justifyContent: 'space-between',
     paddingVertical: 14,
-    borderRadius: 8,
+    paddingHorizontal: 16,
+    backgroundColor: '#FFFFFF',
+    borderBottomWidth: 1.5,
+    borderBottomColor: '#ECEEF2',
+  },
+  deliveryLeftRow: {
     flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
+    marginRight: 10,
+  },
+  deliveryIcon: {
+    marginRight: 12,
+  },
+  deliveryTextCol: {
+    flex: 1,
+  },
+  deliveryHeadline: {
+    fontSize: 13,
+    fontWeight: 'bold',
+    color: colors.text,
+    fontFamily: 'System',
+  },
+  deliveryAddress: {
+    fontSize: 11,
+    color: '#6B7280',
+    marginTop: 2,
+    fontFamily: 'System',
+  },
+  deliveryExpandButton: {
+    padding: 4,
+  },
+  expandIcon: {},
+  freeDeliveryBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#F3F4F6', // soft background tint
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    borderBottomWidth: 1.5,
+    borderBottomColor: '#ECEEF2',
+  },
+  tickIcon: {
+    marginRight: 10,
+  },
+  freeDeliveryText: {
+    fontSize: 11,
+    fontWeight: 'bold',
+    color: colors.primary, // blue text
+    fontFamily: 'System',
+    flex: 1,
+  },
+  selectToggleContainer: {
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    backgroundColor: '#FFFFFF',
+    borderBottomWidth: 1.5,
+    borderBottomColor: '#ECEEF2',
+  },
+  selectToggleText: {
+    fontSize: 11,
+    fontWeight: 'bold',
+    color: colors.primary, // blue text
+    fontFamily: 'System',
+  },
+  payBarContainer: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    backgroundColor: '#FFFFFF',
+    paddingVertical: 14,
+    paddingHorizontal: 20,
+    borderTopWidth: 1.5,
+    borderTopColor: '#ECEEF2',
     justifyContent: 'center',
     alignItems: 'center',
-    gap: 8,
-    marginTop: 12,
+    zIndex: 99,
   },
-  checkoutButtonText: {
+  payButton: {
+    backgroundColor: colors.primary, // blue payment button
+    paddingVertical: 14,
+    borderRadius: 24,
+    width: '90%',
+    justifyContent: 'center',
+    alignItems: 'center',
+    shadowColor: colors.primary,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.15,
+    shadowRadius: 6,
+    elevation: 3,
+  },
+  payButtonText: {
     color: colors.white,
-    fontSize: 14,
-    fontWeight: '600',
+    fontSize: 15,
+    fontWeight: 'bold',
+    fontFamily: 'System',
   },
 });

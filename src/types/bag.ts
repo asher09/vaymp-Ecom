@@ -5,6 +5,11 @@ export interface BagItem {
   price: number;
   image: string;
   quantity: number;
+  brand?: string;
+  originalPrice?: number;
+  discountPercentage?: number;
+  isSelected?: boolean;
+  description?: string;
 }
 
 export interface BagState {

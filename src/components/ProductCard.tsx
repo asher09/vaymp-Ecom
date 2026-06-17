@@ -9,11 +9,13 @@ import {
   Alert,
 } from 'react-native';
 import { useDispatch } from 'react-redux';
-import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
+import { MaterialCommunityIcons as Icon } from '@expo/vector-icons';
 import { addToBag } from '../redux/slices/bagSlice';
 import { colors } from '../styles/colors';
-import { formatPrice, truncateText, formatRating } from '../utils/helpers';
+import { formatPrice, truncateText } from '../utils/helpers';
 import { APP_STRINGS } from '../utils/constants';
+import { TryNBuyIcon } from './SvgIcons';
+import { LikeOnItemsIcon } from './CustomSvgIcons';
 
 interface ProductCardProps {
   id: number;
@@ -25,6 +27,9 @@ interface ProductCardProps {
     rate: number;
     count: number;
   };
+  brand?: string;
+  originalPrice?: number;
+  discountPercentage?: number;
   onPress?: () => void;
 }
 
@@ -35,97 +40,127 @@ export const ProductCard: React.FC<ProductCardProps> = ({
   description,
   image,
   rating,
+  brand = 'Vashions',
+  originalPrice,
+  discountPercentage,
   onPress,
 }) => {
   const dispatch = useDispatch();
   const [imageLoading, setImageLoading] = useState(true);
   const [imageError, setImageError] = useState(false);
+  const [isFavorite, setIsFavorite] = useState(false);
 
   const handleAddToBag = () => {
-    dispatch(addToBag({
-      id,
-      title,
-      price,
-      description,
-      image,
-      category: 'general',
-      rating,
-    }));
-    
+    dispatch(
+      addToBag({
+        id,
+        title,
+        price,
+        description,
+        image,
+        category: 'Men',
+        rating,
+        brand,
+        originalPrice,
+        discountPercentage,
+      })
+    );
+
     Alert.alert(
       APP_STRINGS.ITEM_ADDED,
-      title,
+      `"${title}" has been added to your shopping bag.`,
       [{ text: 'OK', onPress: () => {} }],
-      { cancelable: false }
+      { cancelable: true }
     );
   };
 
   return (
     <TouchableOpacity
       style={styles.container}
-      onPress={onPress}
-      activeOpacity={0.8}
+      onPress={onPress || handleAddToBag}
+      activeOpacity={0.9}
     >
       {/* Image Container */}
       <View style={styles.imageContainer}>
         {imageLoading && (
           <ActivityIndicator
-            size="large"
+            size="small"
             color={colors.primary}
             style={StyleSheet.absoluteFill}
           />
         )}
-        
+
         <Image
           source={{ uri: image }}
           style={styles.image}
-          onLoadStart={() => setImageLoading(true)}
-          onLoadEnd={() => setImageLoading(false)}
+          onLoadStart={() => {
+            if (!imageLoading) {
+              setImageLoading(true);
+            }
+          }}
+          onLoadEnd={() => {
+            if (imageLoading) {
+              setImageLoading(false);
+            }
+          }}
           onError={() => {
             setImageError(true);
-            setImageLoading(false);
+            if (imageLoading) {
+              setImageLoading(false);
+            }
           }}
         />
 
         {imageError && (
           <View style={styles.imagePlaceholder}>
-            <Icon name="image-off" size={40} color={colors.textTertiary} />
+            <Icon name="image-off" size={36} color={colors.textTertiary} />
           </View>
         )}
+
+        {/* Heart Icon Overlay */}
+        <TouchableOpacity
+          style={styles.heartButton}
+          onPress={() => setIsFavorite(!isFavorite)}
+          activeOpacity={0.7}
+        >
+          <LikeOnItemsIcon
+            filled={isFavorite}
+            width={16}
+            height={15}
+            color={isFavorite ? colors.secondary : '#888888'}
+          />
+        </TouchableOpacity>
       </View>
 
       {/* Content Container */}
       <View style={styles.contentContainer}>
+        {/* Brand */}
+        <Text style={styles.brand} numberOfLines={1}>
+          {brand}
+        </Text>
+
         {/* Title */}
-        <Text style={styles.title} numberOfLines={2}>
-          {truncateText(title, 50)}
+        <Text style={styles.title} numberOfLines={1}>
+          {title}
         </Text>
 
-        {/* Description */}
-        <Text style={styles.description} numberOfLines={2}>
-          {truncateText(description, 80)}
-        </Text>
+        {/* Price Row */}
+        <View style={styles.priceRow}>
+          <Text style={styles.price}>₹{price}</Text>
 
-        {/* Rating */}
-        <View style={styles.ratingContainer}>
-          <Icon name="star" size={14} color="#FFB800" />
-          <Text style={styles.rating}>
-            {formatRating(rating.rate)} ({rating.count})
-          </Text>
+          {/* TRY N BUY logo */}
+          <TryNBuyIcon style={styles.tryNBuyIcon} />
         </View>
 
-        {/* Price and Add Button */}
-        <View style={styles.footer}>
-          <Text style={styles.price}>{formatPrice(price)}</Text>
-          <TouchableOpacity
-            style={styles.addButton}
-            onPress={handleAddToBag}
-            activeOpacity={0.7}
-          >
-            <Icon name="shopping-outline" size={18} color={colors.white} />
-            <Text style={styles.addButtonText}>Add</Text>
-          </TouchableOpacity>
-        </View>
+        {/* Discount Row (Original Price and Discount) */}
+        {originalPrice && discountPercentage ? (
+          <View style={styles.discountRow}>
+            <Text style={styles.originalPrice}>₹{originalPrice}</Text>
+            <Text style={styles.discountText}>{discountPercentage}% OFF</Text>
+          </View>
+        ) : (
+          <View style={styles.discountRowSpacer} />
+        )}
       </View>
     </TouchableOpacity>
   );
@@ -134,28 +169,25 @@ export const ProductCard: React.FC<ProductCardProps> = ({
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.surface,
-    borderRadius: 12,
+    backgroundColor: 'transparent',
     marginHorizontal: 8,
-    marginVertical: 8,
-    shadowColor: colors.shadow,
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 3.84,
-    elevation: 5,
-    overflow: 'hidden',
+    marginVertical: 10,
+    maxWidth: '48%',
   },
   imageContainer: {
     width: '100%',
-    height: 150,
-    backgroundColor: colors.background,
+    height: 190,
+    backgroundColor: '#EAEAEA',
+    borderRadius: 12,
+    overflow: 'hidden',
     justifyContent: 'center',
     alignItems: 'center',
+    position: 'relative',
   },
   image: {
     width: '100%',
     height: '100%',
-    resizeMode: 'contain',
+    resizeMode: 'cover',
   },
   imagePlaceholder: {
     position: 'absolute',
@@ -165,61 +197,68 @@ const styles = StyleSheet.create({
     bottom: 0,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: colors.background,
+    backgroundColor: '#E5E7EB',
+  },
+  heartButton: {
+    position: 'absolute',
+    top: 10,
+    right: 10,
+    backgroundColor: 'rgba(255, 255, 255, 0.85)',
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    justifyContent: 'center',
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
+    elevation: 2,
   },
   contentContainer: {
-    flex: 1,
-    padding: 12,
-    justifyContent: 'space-between',
+    paddingVertical: 8,
+    paddingHorizontal: 2,
+  },
+  brand: {
+    fontSize: 14,
+    fontWeight: 'bold',
+    color: colors.text,
   },
   title: {
-    fontSize: 13,
-    fontWeight: '600',
-    color: colors.text,
-    marginBottom: 6,
-  },
-  description: {
     fontSize: 11,
     color: colors.textSecondary,
-    marginBottom: 8,
-    lineHeight: 16,
+    marginTop: 2,
   },
-  ratingContainer: {
+  priceRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 8,
-  },
-  rating: {
-    fontSize: 11,
-    color: colors.textSecondary,
-    marginLeft: 4,
-  },
-  footer: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginTop: 8,
-    paddingTop: 8,
-    borderTopWidth: 1,
-    borderTopColor: colors.border,
+    marginTop: 4,
   },
   price: {
-    fontSize: 14,
-    fontWeight: '700',
-    color: colors.secondary,
+    fontSize: 13,
+    fontWeight: 'bold',
+    color: colors.text,
   },
-  addButton: {
-    backgroundColor: colors.secondary,
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 6,
+  tryNBuyIcon: {
+    marginLeft: 8,
+  },
+  discountRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 4,
+    marginTop: 2,
   },
-  addButtonText: {
-    color: colors.white,
-    fontSize: 11,
-    fontWeight: '600',
+  originalPrice: {
+    fontSize: 10,
+    color: '#888888',
+    textDecorationLine: 'line-through',
+  },
+  discountText: {
+    fontSize: 10,
+    fontWeight: 'bold',
+    color: colors.primary,
+    marginLeft: 6,
+  },
+  discountRowSpacer: {
+    height: 14, // keeps height consistent when no discount row exists
   },
 });

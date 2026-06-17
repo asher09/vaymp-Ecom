@@ -7,11 +7,13 @@ import {
   Alert,
   RefreshControl,
   TouchableOpacity,
+  Text,
 } from 'react-native';
 import { useSelector } from 'react-redux';
-import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
+import { MaterialCommunityIcons as Icon } from '@expo/vector-icons';
 import { Header } from '../components/Header';
 import { ProductCard } from '../components/ProductCard';
+import { SortIcon, FilterIcon, LineIcon } from '../components/CustomSvgIcons';
 import { SortModal } from './modals/SortModal';
 import { FilterModal } from './modals/FilterModal';
 import { productApi } from '../api/productApi';
@@ -24,6 +26,7 @@ interface ProductsScreenProps {
 }
 
 export const ProductsScreen: React.FC<ProductsScreenProps> = ({ navigation }) => {
+  console.log('=== PRODUCTSSCREEN RENDERING ===, loading:', true);
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -57,9 +60,28 @@ export const ProductsScreen: React.FC<ProductsScreenProps> = ({ navigation }) =>
   const filteredAndSorted = useMemo(() => {
     let result = [...products];
 
-    // Apply category filter
-    if (selectedCategories.length > 0) {
-      result = result.filter(p => selectedCategories.includes(p.category));
+    // Separate gender/category filters from suggested filters
+    const genderFilters = selectedCategories.filter(c => ['Men', 'Women', 'Boys', 'Girls', 'Unisex'].includes(c));
+    const suggestedFilters = selectedCategories.filter(c => ['2 days delivery', 'Brown', 'Under ₹700', '50% off'].includes(c));
+
+    // Apply gender category filter
+    if (genderFilters.length > 0) {
+      result = result.filter(p => genderFilters.includes(p.category));
+    }
+
+    // Apply suggested filters
+    if (suggestedFilters.length > 0) {
+      suggestedFilters.forEach(filter => {
+        if (filter === 'Under ₹700') {
+          result = result.filter(p => p.price < 700);
+        } else if (filter === '50% off') {
+          result = result.filter(p => p.discountPercentage !== undefined && p.discountPercentage >= 50);
+        } else if (filter === 'Brown') {
+          result = result.filter(p => p.brand === 'Savana');
+        } else if (filter === '2 days delivery') {
+          result = result.filter(p => p.brand === 'Vashions' || p.brand === 'Zudio');
+        }
+      });
     }
 
     // Apply sort
@@ -69,6 +91,10 @@ export const ProductsScreen: React.FC<ProductsScreenProps> = ({ navigation }) =>
       result.sort((a, b) => b.price - a.price);
     } else if (sortBy === 'rating') {
       result.sort((a, b) => b.rating.rate - a.rating.rate);
+    } else if (sortBy === 'newest') {
+      result.sort((a, b) => b.id - a.id);
+    } else if (sortBy === 'offers') {
+      result.sort((a, b) => (b.discountPercentage || 0) - (a.discountPercentage || 0));
     }
 
     return result;
@@ -82,9 +108,9 @@ export const ProductsScreen: React.FC<ProductsScreenProps> = ({ navigation }) =>
       description={item.description}
       image={item.image}
       rating={item.rating}
-      onPress={() => {
-        // Optional: Navigate to product details
-      }}
+      brand={item.brand}
+      originalPrice={item.originalPrice}
+      discountPercentage={item.discountPercentage}
     />
   );
 
@@ -93,10 +119,12 @@ export const ProductsScreen: React.FC<ProductsScreenProps> = ({ navigation }) =>
     fetchProducts();
   };
 
+  const hasActiveFilters = selectedCategories.length > 0 || sortBy !== null;
+
   if (loading) {
     return (
       <View style={styles.container}>
-        <Header title="Products" />
+        <Header title="T-shirts" isProductsScreen />
         <View style={styles.centerContent}>
           <ActivityIndicator size="large" color={colors.primary} />
         </View>
@@ -106,28 +134,20 @@ export const ProductsScreen: React.FC<ProductsScreenProps> = ({ navigation }) =>
 
   return (
     <View style={styles.container}>
+      {/* Header with Cart logo and action icons */}
       <Header
-        title="Products"
-        rightIcon="shopping-outline"
-        rightIconBadge={bagItems.length}
+        title="T-shirts"
+        isProductsScreen
+        rightIconBadge={bagItems.reduce((acc, item) => acc + item.quantity, 0)}
         onRightIconPress={() => navigation.navigate('Bag')}
+        onBackPress={() => Alert.alert('Back', 'Back arrow clicked')}
       />
 
-      {/* Filter and Sort Bar */}
-      <View style={styles.controlBar}>
-        <TouchableOpacity
-          style={styles.button}
-          onPress={() => setShowFilterModal(true)}
-        >
-          <Icon name="filter-outline" size={20} color={colors.primary} />
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          style={styles.button}
-          onPress={() => setShowSortModal(true)}
-        >
-          <Icon name="sort" size={20} color={colors.primary} />
-        </TouchableOpacity>
+      {/* Showing results label below header */}
+      <View style={styles.resultsInfoContainer}>
+        <Text style={styles.resultsText}>
+          Showing <Text style={styles.resultsHighlight}>{filteredAndSorted.length} results</Text> for <Text style={styles.resultsUnderline}>Slim Fit XL Men's</Text> T-shirts
+        </Text>
       </View>
 
       {/* Products List */}
@@ -138,6 +158,7 @@ export const ProductsScreen: React.FC<ProductsScreenProps> = ({ navigation }) =>
         numColumns={2}
         columnWrapperStyle={styles.columnWrapper}
         contentContainerStyle={styles.listContent}
+        showsVerticalScrollIndicator={false}
         refreshControl={
           <RefreshControl
             refreshing={refreshing}
@@ -148,17 +169,49 @@ export const ProductsScreen: React.FC<ProductsScreenProps> = ({ navigation }) =>
         ListEmptyComponent={
           <View style={styles.centerContent}>
             <Icon name="inbox" size={48} color={colors.textTertiary} />
+            <Text style={styles.emptyText}>No products match filters</Text>
           </View>
         }
       />
 
-      {/* Sort Modal */}
+      {/* Floating Sort / Filter Pill at bottom center */}
+      <View style={styles.floatingPillContainer}>
+        <View style={styles.pillCard}>
+          {/* Sort side */}
+          <TouchableOpacity
+            style={styles.pillButton}
+            onPress={() => setShowSortModal(true)}
+            activeOpacity={0.7}
+          >
+            <SortIcon width={15} height={17} color="#4342FF" />
+            <Text style={styles.pillButtonText}>Sort by</Text>
+          </TouchableOpacity>
+
+          {/* Divider */}
+          <LineIcon width={2} height={32} color="#4342FF" />
+
+          {/* Filter side */}
+          <TouchableOpacity
+            style={styles.pillButton}
+            onPress={() => setShowFilterModal(true)}
+            activeOpacity={0.7}
+          >
+            <FilterIcon width={19} height={18} color="#4342FF" />
+            <View style={styles.filterTextWrapper}>
+              <Text style={styles.pillButtonText}>Filters</Text>
+              {hasActiveFilters && <View style={styles.activeFilterDot} />}
+            </View>
+          </TouchableOpacity>
+        </View>
+      </View>
+
+      {/* Sort Modal Sheet */}
       <SortModal
         visible={showSortModal}
         onClose={() => setShowSortModal(false)}
       />
 
-      {/* Filter Modal */}
+      {/* Filter Modal Sheet */}
       <FilterModal
         visible={showFilterModal}
         onClose={() => setShowFilterModal(false)}
@@ -170,38 +223,99 @@ export const ProductsScreen: React.FC<ProductsScreenProps> = ({ navigation }) =>
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.background,
+    backgroundColor: '#FFFFFF',
   },
   centerContent: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
   },
-  controlBar: {
-    flexDirection: 'row',
-    justifyContent: 'flex-end',
+  resultsInfoContainer: {
     paddingHorizontal: 16,
     paddingVertical: 12,
-    gap: 8,
+    backgroundColor: '#FFFFFF',
   },
-  button: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: colors.surface,
-    justifyContent: 'center',
-    alignItems: 'center',
-    shadowColor: colors.shadow,
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 3.84,
-    elevation: 3,
+  resultsText: {
+    fontSize: 12,
+    color: '#6B7280',
+    fontFamily: 'System',
+  },
+  resultsHighlight: {
+    color: colors.primary,
+    fontWeight: 'bold',
+  },
+  resultsUnderline: {
+    textDecorationLine: 'underline',
+    color: colors.text,
+    fontWeight: 'bold',
   },
   columnWrapper: {
-    justifyContent: 'space-between',
+    justifyContent: 'flex-start',
     paddingHorizontal: 8,
   },
   listContent: {
-    paddingBottom: 16,
+    paddingBottom: 100, // padding to clear the floating pill
+  },
+  emptyText: {
+    marginTop: 8,
+    color: colors.textSecondary,
+    fontSize: 14,
+  },
+  floatingPillContainer: {
+    position: 'absolute',
+    bottom: 24,
+    left: 0,
+    right: 0,
+    alignItems: 'center',
+    justifyContent: 'center',
+    zIndex: 99,
+  },
+  pillCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#F8F9FA',
+    borderRadius: 24,
+    borderWidth: 1.5,
+    borderColor: '#ECEEF2',
+    height: 48,
+    width: '85%',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.08,
+    shadowRadius: 8,
+    elevation: 6,
+  },
+  pillButton: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    height: '100%',
+    gap: 6,
+  },
+  pillButtonText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: colors.text,
+    fontFamily: 'System',
+  },
+  pillDivider: {
+    width: 1.5,
+    height: '50%',
+    backgroundColor: '#ECEEF2',
+  },
+  filterTextWrapper: {
+    position: 'relative',
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  activeFilterDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: colors.primary,
+    position: 'absolute',
+    right: -8,
+    top: 0,
   },
 });

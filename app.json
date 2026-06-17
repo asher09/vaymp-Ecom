@@ -4,6 +4,7 @@
   "expo": {
     "name": "VayampEcommerce",
     "slug": "vayampecommerce",
+    "scheme": "vayampecommerce",
     "version": "1.0.0",
     "android": {
       "package": "com.vayampecommerce"

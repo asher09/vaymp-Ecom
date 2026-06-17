@@ -5,17 +5,16 @@ import {
   Image,
   TouchableOpacity,
   StyleSheet,
-  Alert,
 } from 'react-native';
 import { useDispatch } from 'react-redux';
-import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import {
-  removeFromBag,
   increaseQuantity,
   decreaseQuantity,
+  toggleSelectItem,
 } from '../redux/slices/bagSlice';
 import { colors } from '../styles/colors';
-import { formatPrice } from '../utils/helpers';
+import { TryNBuyIcon } from './SvgIcons';
+import { CheckIcon, MinusIcon, PlusIcon, TrashIcon } from './CustomSvgIcons';
 
 interface BagItemProps {
   id: number;
@@ -24,64 +23,75 @@ interface BagItemProps {
   price: number;
   image: string;
   quantity: number;
+  originalPrice?: number;
+  discountPercentage?: number;
+  isSelected?: boolean;
+  description?: string;
 }
 
 export const BagItem: React.FC<BagItemProps> = ({
-  id,
   productId,
   title,
   price,
   image,
   quantity,
+  originalPrice,
+  isSelected = true,
+  description = 'Product description line 1\nProduct description line 2',
 }) => {
   const dispatch = useDispatch();
 
-  const handleRemove = () => {
-    Alert.alert(
-      'Remove Item',
-      `Remove "${title}" from bag?`,
-      [
-        { text: 'Cancel', onPress: () => {} },
-        {
-          text: 'Remove',
-          onPress: () => dispatch(removeFromBag(productId)),
-          style: 'destructive',
-        },
-      ]
-    );
+  const handleToggleSelect = () => {
+    dispatch(toggleSelectItem(productId));
   };
-
-  const itemTotal = price * quantity;
 
   return (
     <View style={styles.container}>
-      {/* Product Image */}
-      <Image
-        source={{ uri: image }}
-        style={styles.image}
-        resizeMode="contain"
-      />
+      {/* Product Image Container with checkbox overlay */}
+      <View style={styles.imageContainer}>
+        <Image source={{ uri: image }} style={styles.image} />
+        
+        {/* Blue Checkbox overlayed at top-left */}
+        <TouchableOpacity
+          style={[styles.checkbox, isSelected && styles.checkboxSelected]}
+          onPress={handleToggleSelect}
+          activeOpacity={0.7}
+        >
+          {isSelected && <CheckIcon width={10} height={10} color={colors.white} />}
+        </TouchableOpacity>
+      </View>
 
-      {/* Product Details */}
+      {/* Product Details Column */}
       <View style={styles.detailsContainer}>
-        <View style={styles.headerRow}>
-          <Text style={styles.title} numberOfLines={2}>
-            {title}
-          </Text>
-          <TouchableOpacity onPress={handleRemove} style={styles.removeButton}>
-            <Icon name="trash-can-outline" size={18} color={colors.error} />
-          </TouchableOpacity>
+        {/* Title */}
+        <Text style={styles.title}>{title}</Text>
+
+        {/* Multi-line Description */}
+        <Text style={styles.description} numberOfLines={2}>
+          {description}
+        </Text>
+
+        {/* Price Row (current price, original price, try n buy icon) */}
+        <View style={styles.priceRow}>
+          <Text style={styles.price}>₹{price}</Text>
+          {originalPrice && (
+            <Text style={styles.originalPrice}>₹{originalPrice}</Text>
+          )}
+          <TryNBuyIcon width={52} height={12} style={styles.tryNBuy} />
         </View>
 
-        <Text style={styles.price}>{formatPrice(price)}</Text>
-
-        {/* Quantity Controls */}
-        <View style={styles.quantityContainer}>
+        {/* Quantity Controls Pill capsule */}
+        <View style={styles.quantityCapsule}>
           <TouchableOpacity
             style={styles.quantityButton}
             onPress={() => dispatch(decreaseQuantity(productId))}
+            activeOpacity={0.6}
           >
-            <Icon name="minus" size={16} color={colors.primary} />
+            {quantity === 1 ? (
+              <TrashIcon width={13} height={13} color={colors.text} />
+            ) : (
+              <MinusIcon width={11} height={11} color={colors.text} />
+            )}
           </TouchableOpacity>
 
           <Text style={styles.quantity}>{quantity}</Text>
@@ -89,15 +99,11 @@ export const BagItem: React.FC<BagItemProps> = ({
           <TouchableOpacity
             style={styles.quantityButton}
             onPress={() => dispatch(increaseQuantity(productId))}
+            activeOpacity={0.6}
           >
-            <Icon name="plus" size={16} color={colors.primary} />
+            <PlusIcon width={11} height={11} color={colors.text} />
           </TouchableOpacity>
         </View>
-      </View>
-
-      {/* Item Total */}
-      <View style={styles.totalContainer}>
-        <Text style={styles.itemTotal}>{formatPrice(itemTotal)}</Text>
       </View>
     </View>
   );
@@ -106,78 +112,111 @@ export const BagItem: React.FC<BagItemProps> = ({
 const styles = StyleSheet.create({
   container: {
     flexDirection: 'row',
-    backgroundColor: colors.surface,
-    borderRadius: 10,
-    marginHorizontal: 16,
-    marginVertical: 8,
-    padding: 12,
-    shadowColor: colors.shadow,
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
-    shadowRadius: 2,
-    elevation: 2,
+    backgroundColor: '#FFFFFF',
+    paddingVertical: 16,
+    paddingHorizontal: 16,
+    borderBottomWidth: 1.5,
+    borderBottomColor: '#ECEEF2',
+    alignItems: 'flex-start',
+  },
+  leftRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginRight: 14,
+  },
+  checkbox: {
+    position: 'absolute',
+    top: 8,
+    left: 8,
+    zIndex: 10,
+    width: 18,
+    height: 18,
+    borderRadius: 4,
+    borderWidth: 1.5,
+    borderColor: '#D1D5DB',
+    backgroundColor: '#FFFFFF',
+    justifyContent: 'center',
     alignItems: 'center',
   },
-  image: {
-    width: 80,
-    height: 80,
+  checkboxSelected: {
+    backgroundColor: colors.primary, // blue square
+    borderColor: colors.primary,
+  },
+  imageContainer: {
+    width: 105,
+    height: 105,
     borderRadius: 8,
-    backgroundColor: colors.background,
-    marginRight: 12,
+    backgroundColor: '#F3F4F6',
+    overflow: 'hidden',
+    borderWidth: 1,
+    borderColor: '#ECEEF2',
+    marginRight: 14,
+    position: 'relative',
+  },
+  image: {
+    width: '100%',
+    height: '100%',
+    resizeMode: 'cover',
   },
   detailsContainer: {
     flex: 1,
-  },
-  headerRow: {
-    flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'flex-start',
-    marginBottom: 6,
   },
   title: {
-    flex: 1,
-    fontSize: 13,
-    fontWeight: '600',
+    fontSize: 14,
+    fontWeight: 'bold',
     color: colors.text,
-    marginRight: 8,
+    fontFamily: 'System',
   },
-  removeButton: {
-    padding: 4,
+  description: {
+    fontSize: 11,
+    color: colors.textSecondary,
+    marginTop: 2,
+    lineHeight: 14,
+    fontFamily: 'System',
+  },
+  priceRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 6,
   },
   price: {
-    fontSize: 12,
-    fontWeight: '600',
-    color: colors.secondary,
-    marginBottom: 8,
+    fontSize: 14,
+    fontWeight: 'bold',
+    color: colors.text,
   },
-  quantityContainer: {
+  originalPrice: {
+    fontSize: 11,
+    color: '#888888',
+    textDecorationLine: 'line-through',
+    marginLeft: 8,
+  },
+  tryNBuy: {
+    marginLeft: 10,
+  },
+  quantityCapsule: {
     flexDirection: 'row',
     alignItems: 'center',
     borderWidth: 1,
-    borderColor: colors.border,
-    borderRadius: 6,
-    width: 100,
+    borderColor: '#ECEEF2',
+    borderRadius: 15, // pill rounded capsule
+    height: 30,
+    width: 92,
+    backgroundColor: '#FFFFFF',
+    marginTop: 8,
   },
   quantityButton: {
     flex: 1,
-    paddingVertical: 6,
+    height: '100%',
     alignItems: 'center',
     justifyContent: 'center',
   },
   quantity: {
-    flex: 1,
-    textAlign: 'center',
     fontSize: 12,
-    fontWeight: '600',
+    fontWeight: 'bold',
     color: colors.text,
-  },
-  totalContainer: {
-    marginLeft: 12,
-    alignItems: 'flex-end',
-  },
-  itemTotal: {
-    fontSize: 13,
-    fontWeight: '700',
-    color: colors.primary,
+    fontFamily: 'System',
+    textAlign: 'center',
+    minWidth: 16,
   },
 });
